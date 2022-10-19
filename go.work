@@ -1,0 +1,7 @@
+go 1.19
+
+use (
+	./service-a
+	./service-b
+	./service-c
+)

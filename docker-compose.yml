@@ -1,0 +1,55 @@
+version: "3.9"
+services:
+  service-a:
+    build:
+      context: ./service-a
+    container_name: service-a
+    ports:
+      - "8000:8000"
+    volumes:
+      - ~/.aws/:/root/.aws/:ro
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=collector:4317
+      - PAYMENT_SERVICE_HOST=http://service-b:8001
+    depends_on:
+      - collector
+
+  service-b:
+    build:
+      context: ./service-b
+    container_name: service-b
+    ports:
+      - "8001:8001"
+    volumes:
+      - ~/.aws/:/root/.aws/:ro
+    env_file:
+      ./service-b/.env
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=collector:4317
+    depends_on:
+      - collector
+  
+  service-c:
+    build:
+      context: ./service-c
+    container_name: service-c
+    volumes:
+      - ~/.aws/:/root/.aws/:ro
+    env_file:
+      ./service-c/.env
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=collector:4317
+    depends_on:
+      - collector
+
+  collector:
+    container_name: adot-collector
+    image: amazon/aws-otel-collector:latest
+    command: ["--config=/etc/ecs/ecs-default-config.yaml"]
+    environment:
+      - AWS_REGION=us-east-1
+    volumes:
+      - ~/.aws:/root/.aws
+    ports:
+      # OTLP GRPC port
+      - "4317:4317"
